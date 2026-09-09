@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: visitas-app-config
+  namespace: registro-visitas
+data:
+  DB_NAME: "registro_visitas"
+  LOG_LEVEL: "INFO"

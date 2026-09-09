@@ -1,0 +1,35 @@
+# Recurso custom del MongoDB Community Operator: crea un Replica Set de 3 nodos
+# (StatefulSet + Services internamente) con failover automático.
+# Requiere el operator instalado antes (ver README.md, sección Kubernetes).
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: mongodb-rs
+  namespace: registro-visitas
+spec:
+  members: 3
+  type: ReplicaSet
+  version: "7.0.11"
+  security:
+    authentication:
+      modes: ["SCRAM"]
+  users:
+    - name: appuser
+      db: admin
+      passwordSecretRef:
+        name: mongodb-app-password
+        key: password
+      roles:
+        - name: readWrite
+          db: registro_visitas
+      scramCredentialsSecretName: appuser-scram
+  statefulSet:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: mongod
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "256Mi"

@@ -1,0 +1,14 @@
+# Expone la API afuera del cluster balanceando entre las réplicas del Deployment.
+# En Docker Desktop, los Services LoadBalancer quedan disponibles en localhost.
+apiVersion: v1
+kind: Service
+metadata:
+  name: visitas-app
+  namespace: registro-visitas
+spec:
+  type: LoadBalancer
+  selector:
+    app: visitas-app
+  ports:
+    - port: 80
+      targetPort: 8000

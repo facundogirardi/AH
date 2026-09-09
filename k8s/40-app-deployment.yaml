@@ -1,0 +1,61 @@
+# Deployment de la API con 2 réplicas (alta disponibilidad a nivel de aplicación).
+# Requiere la imagen "registro-visitas-app:local" construida localmente
+# (ver README.md) y visible para el cluster de Docker Desktop.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: visitas-app
+  namespace: registro-visitas
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: visitas-app
+  template:
+    metadata:
+      labels:
+        app: visitas-app
+    spec:
+      containers:
+        - name: visitas-app
+          image: registro-visitas-app:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: visitas-app-config
+                  key: DB_NAME
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: visitas-app-config
+                  key: LOG_LEVEL
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-app-password
+                  key: password
+            - name: MONGO_URI
+              value: "mongodb://appuser:$(MONGO_PASSWORD)@mongodb-rs-0.mongodb-rs-svc.registro-visitas.svc.cluster.local:27017,mongodb-rs-1.mongodb-rs-svc.registro-visitas.svc.cluster.local:27017,mongodb-rs-2.mongodb-rs-svc.registro-visitas.svc.cluster.local:27017/registro_visitas?replicaSet=mongodb-rs&authSource=admin"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
